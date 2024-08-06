@@ -1,0 +1,29 @@
+{
+    "manifest_version": 3,
+    "name": "No Fishes",
+    "description": "Alerts you of any phishing wbesites you might accidentally visit.",
+    "version": "1.0",
+    "permissions": [
+        "tabs"
+    ],
+    "action": {
+        "default_popup": "fishing-hole.html",
+        "default_icon": "assets/fish-bones-crop.png"
+    },
+    "icons": {
+        "64": "assets/fish-bones-crop.png"
+    },
+    "background": {
+        "service_worker": "scripts/back-fish.js"
+    },
+    "content_scripts": [
+        {
+            "js": [
+                "scripts/fishing-hole.js"
+            ],
+            "matches": [
+                "https://*/*"
+            ]
+        }
+    ]
+}
