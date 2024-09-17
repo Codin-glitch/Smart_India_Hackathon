@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Accelerometer Data</title>
+  <script>
+    let socket;
+
+    function startWebSocket() {
+      // Replace this with the actual IP address of your ESP32
+      socket = new WebSocket('ws://192.168.66.222:81/');
+
+      socket.onopen = function(event) {
+        console.log("WebSocket is open.");
+      };
+
+      socket.onmessage = function(event) {
+        const accelData = JSON.parse(event.data);  // Parse the JSON accelerometer data
+        document.getElementById('x').innerText = accelData.x;
+        document.getElementById('y').innerText = accelData.y;
+        document.getElementById('z').innerText = accelData.z;
+        console.log("Received: ", accelData);
+      };
+
+      fetch('/prediction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(accelData) // Send the accelerometer data as JSON
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Data sent to Flask:", data);
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+        });
+
+      socket.onclose = function(event) {
+        console.log("WebSocket is closed.");
+      };
+    }
+  </script>
+</head>
+<body onload="startWebSocket()">
+  <h1>Live Accelerometer Data from ESP32</h1>
+  <p>X: <span id="x">Waiting...</span></p>
+  <p>Y: <span id="y">Waiting...</span></p>
+  <p>Z: <span id="z">Waiting...</span></p>
+
+  <p>{{Prediction text}}</p>
+</body>
+</html>

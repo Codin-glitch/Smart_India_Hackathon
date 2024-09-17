@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Sensor Data</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+  <script>
+    const flaskSocket = io();
+
+    function startWebSocket() {
+      // Connect to ESP32 WebSocket
+      const esp32Socket = new WebSocket('ws://192.168.236.222:81/');  // Replace with ESP32's actual IP address
+
+      esp32Socket.onopen = () => {
+        console.log("Connected to ESP32 WebSocket.");
+      };
+
+      esp32Socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);  // Assuming ESP32 sends JSON data
+        
+        // Update HTML with sensor values
+        document.getElementById('temp').innerText = data.temp || 'N/A';
+        document.getElementById('accel_x').innerText = data.accel_x || 'N/A';
+        document.getElementById('accel_y').innerText = data.accel_y || 'N/A';
+        document.getElementById('accel_z').innerText = data.accel_z || 'N/A';
+        document.getElementById('gyro_x').innerText = data.gyro_x || 'N/A';
+        document.getElementById('gyro_y').innerText = data.gyro_y || 'N/A';
+        document.getElementById('gyro_z').innerText = data.gyro_z || 'N/A';
+        document.getElementById('sound').innerText = data.sound || 'N/A';
+
+        // Send sensor data to Flask backend for prediction
+        flaskSocket.emit('sensor_data', data);
+      };
+
+      esp32Socket.onerror = (error) => {
+        console.error("WebSocket Error: ", error);
+      };
+    }
+
+    flaskSocket.on('update_dataframe', (data) => {
+      const df = JSON.parse(data.data);
+
+      // Clear previous data
+      const table = document.getElementById('data-table');
+      table.innerHTML = '';
+
+      // Create table headers
+      const headers = df.columns;  // Ensure 'df.columns' exists in the JSON
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headers.forEach(header => {
+        const th = document.createElement('th');
+        th.innerText = header;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Create table rows
+      const tbody = document.createElement('tbody');
+      df.data.forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach(cell => {
+          const td = document.createElement('td');
+          td.innerText = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+    });
+  </script>
+</head>
+<body onload="startWebSocket()">
+  <h1>Live Sensor Data from ESP32</h1>
+  <p>Temperature: <span id="temp">Waiting...</span> °C</p>
+  <p>Accel X: <span id="accel_x">Waiting...</span> m/s²</p>
+  <p>Accel Y: <span id="accel_y">Waiting...</span> m/s²</p>
+  <p>Accel Z: <span id="accel_z">Waiting...</span> m/s²</p>
+  <p>Gyro X: <span id="gyro_x">Waiting...</span> rad/s</p>
+  <p>Gyro Y: <span id="gyro_y">Waiting...</span> rad/s</p>
+  <p>Gyro Z: <span id="gyro_z">Waiting...</span> rad/s</p>
+  <p>Sound Level: <span id="sound">Waiting...</span></p>
+
+  <h2>DataFrame</h2>
+  <table id="data-table" border="1">
+    <!-- Table headers and rows will be added dynamically -->
+  </table>
+</body>
+</html>
